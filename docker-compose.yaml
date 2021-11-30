@@ -53,8 +53,8 @@ services:
             -   'redis'
         volumes:
             -   type: 'bind'
-                source: './public'
-                target: '/srv/public'
+                source: './'
+                target: '/srv'
                 read_only: false
         logging: *default-logging
 
