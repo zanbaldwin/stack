@@ -38,3 +38,26 @@ services:
                 target: '/etc/letsencrypt'
                 read_only: true
         logging: *default-logging
+
+    database:
+        image: 'zanbaldwin/stack/database:${VERSION:-latest}'
+        build:
+            context: './build/docker/database'
+            args:
+                MYSQL_VERSION: '8.0.27'
+        restart: 'unless-stopped'
+        environment:
+            MYSQL_ROOT_PASSWORD_FILE: '/run/secrets/dbpass'
+            MYSQL_DATABASE: 'main'
+        volumes:
+            -   type: 'bind'
+                source: '/opt/mysql'
+                target: '/var/lib/mysql'
+                read_only: false
+        secrets:
+            -   'dbpass'
+        logging: *default-logging
+
+secrets:
+    dbpass:
+        file: './build/.secrets/dbpass'
