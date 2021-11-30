@@ -129,8 +129,8 @@ database-backup:
 }
 > mkdir -p "$(THIS_DIR)/var/dump" && cp "/tmp/$${DB_DUMP_COMPRESSED}" "$(THIS_DIR)/var/dump/$${DB_DUMP_COMPRESSED}" || { \
     echo >&2 "Could move database dump to \"$(THIS_DIR)/var/dump/$${DB_DUMP_COMPRESSED}\"."; \
-    echo >&2 "Please see temporary dump file \"/tmp/$${DB_DUMP_COMPRESSED}\".";
-    exit 4;
+    echo >&2 "Please see temporary dump file \"/tmp/$${DB_DUMP_COMPRESSED}\"."; \
+    exit 4; \
 }
 > rm "/tmp/$${DB_DUMP_COMPRESSED}" || true
 .PHONY: database-backup
