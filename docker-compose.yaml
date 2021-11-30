@@ -1,0 +1,10 @@
+version: '3.8'
+
+x-logging:
+  &default-logging
+    driver: 'json-file'
+    options:
+        max-size: '5m'
+        max-file: '1'
+
+services:

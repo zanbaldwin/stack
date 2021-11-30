@@ -1,0 +1,6 @@
+version: '3.8'
+
+## This file is meant to be used for developing on a local machine.
+## Use only the main Compose file when deploying to production using:
+## docker-compose -f docker-compose.yaml <command>
+services:
