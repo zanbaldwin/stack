@@ -26,6 +26,17 @@ services:
                 target: '/var/lib/mysql'
                 read_only: false
 
+    redis:
+        volumes:
+            # Use a volume for data during development instead of messing with
+            # system directories.
+            -   type: 'volume'
+                source: 'redis'
+                target: '/data'
+                read_only: false
+
 volumes:
     database:
+        driver: 'local'
+    redis:
         driver: 'local'

@@ -58,6 +58,20 @@ services:
             -   'dbpass'
         logging: *default-logging
 
+    redis:
+        image: 'zanbaldwin/stack/redis:${VERSION:-latest}'
+        build:
+            context: './build/docker/redis'
+            args:
+                REDIS_VERSION: '6.2.6'
+        restart: 'unless-stopped'
+        volumes:
+            -   type: 'bind'
+                source: '/opt/redis'
+                target: '/data'
+                read_only: false
+        logging: *default-logging
+
 secrets:
     dbpass:
         file: './build/.secrets/dbpass'
