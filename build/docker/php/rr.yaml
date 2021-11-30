@@ -1,0 +1,30 @@
+rpc:
+    listen: 'tcp://127.0.0.1:6001'
+
+server:
+    command: 'php /srv/public/index.php'
+    user: "${PHP_USER}"
+
+http:
+    address: '0.0.0.0:80'
+    headers:
+        response:
+            X-Powered-By: "RoadRunner"
+    pool:
+        num_workers: 0
+    fcgi:
+        address: 'tcp://0.0.0.0:9000'
+
+status:
+    address: '127.0.0.1:2114'
+    unavailable_status_code: 503
+
+reload:
+    interval: '1s'
+    patterns: [".php"]
+    services:
+        http:
+            dirs: ["/srv"]
+            recursive: true
+            ignore: []
+            patterns: [".php", ".go", ".md"]

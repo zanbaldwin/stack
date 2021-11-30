@@ -39,6 +39,25 @@ services:
                 read_only: true
         logging: *default-logging
 
+    php:
+        image: 'zanbaldwin/stack/php:${VERSION:-latest}'
+        build:
+            context: './build/docker/php'
+            args:
+                PHP_VERSION: '8.1'
+                GOLANG_VERSION: '1.16.5'
+                ROADRUNNER_VERSION: '2.3.0'
+        restart: 'unless-stopped'
+        depends_on:
+            -   'database'
+            -   'redis'
+        volumes:
+            -   type: 'bind'
+                source: './public'
+                target: '/srv/public'
+                read_only: false
+        logging: *default-logging
+
     database:
         image: 'zanbaldwin/stack/database:${VERSION:-latest}'
         build:
