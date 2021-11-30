@@ -8,3 +8,33 @@ x-logging:
         max-file: '1'
 
 services:
+
+    server:
+        image: 'zanbaldwin/stack/server:${VERSION:-latest}'
+        build:
+            context: './build/docker/server'
+            args:
+                NGINX_VERSION: '1.21.4'
+                DOMAIN: '${DOMAIN:-localhost}'
+        restart: 'unless-stopped'
+        depends_on:
+            - 'php'
+        ports:
+            -   target: 80
+                published: '${WEB_PORT:-80}'
+                protocol: 'tcp'
+                mode: 'host'
+            -   target: 443
+                published: '${SSL_PORT:-443}'
+                protocol: 'tcp'
+                mode: 'host'
+        volumes:
+            -   type: 'bind'
+                source: './public'
+                target: '/srv/public'
+                read_only: true
+            -   type: 'bind'
+                source: '/etc/letsencrypt'
+                target: '/etc/letsencrypt'
+                read_only: true
+        logging: *default-logging
