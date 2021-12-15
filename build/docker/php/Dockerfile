@@ -47,11 +47,13 @@ ENTRYPOINT [ "/tini", "--" ]
 # WordPress plugins are likely to use.
 # Runtime dependencies detection snippet from dunglas/symfony-docker.
 RUN    apk add --no-cache --upgrade --virtual '.extension-build-deps' \
-        $PHPIZE_DEPS giflib-dev gmp-dev icu-dev imagemagick-dev libffi-dev libjpeg-turbo-dev libpng-dev libwebp-dev libzip-dev zlib-dev \
+        $PHPIZE_DEPS giflib-dev gmp-dev icu-dev imagemagick-dev libffi-dev \
+        libjpeg-turbo-dev libpng-dev libwebp-dev libzip-dev rabbitmq-c-dev zlib-dev \
     && docker-php-ext-configure gd --with-jpeg --with-webp \
     && docker-php-ext-configure zip \
     && docker-php-ext-install -j$(nproc) \
         exif ffi gd gmp intl mysqli pcntl pdo_mysql sockets zip \
+    && pecl install amqp && docker-php-ext-enable amqp \
     && pecl install imagick && docker-php-ext-enable imagick \
     && pecl install redis && docker-php-ext-enable redis \
     && docker-php-ext-enable opcache \
