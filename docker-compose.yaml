@@ -50,6 +50,7 @@ services:
         restart: 'unless-stopped'
         depends_on:
             -   'database'
+            -   'queue'
             -   'redis'
         volumes:
             -   type: 'bind'
@@ -91,6 +92,38 @@ services:
                 read_only: true
         env_file:
             -   './.env'
+        logging: *default-logging
+
+    queue:
+        image: 'rabbitmq:3.9.11-alpine'
+        restart: 'unless-stopped'
+        environment: {}
+        volumes:
+            -   type: 'bind'
+                source: '/opt/rabbitmq'
+                target: '/var/lib/rabbitmq'
+                read_only: false
+        logging: *default-logging
+
+    workers:
+        image: 'zanbaldwin/stack/php:${VERSION:-latest}'
+        build:
+            context: './build/docker/php'
+            args:
+                PHP_VERSION: '8.1'
+                GOLANG_VERSION: '1.16.5'
+                ROADRUNNER_VERSION: '2.3.0'
+        restart: 'unless-stopped'
+        command: ['php', 'bin/console', 'messenger:consume', '--env=prod']
+        depends_on:
+            -   'database'
+            -   'queue'
+            -   'redis'
+        volumes:
+            -   type: 'bind'
+                source: './'
+                target: '/srv'
+                read_only: false
         logging: *default-logging
 
     redis:

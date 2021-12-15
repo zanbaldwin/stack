@@ -26,6 +26,24 @@ services:
                 target: '/var/lib/mysql'
                 read_only: false
 
+    queue:
+        image: 'rabbitmq:3.9.11-management-alpine'
+        volumes:
+            # Use a volume for data during development instead of messing with
+            # system directories.
+            -   type: 'volume'
+                source: 'queue'
+                target: '/var/lib/rabbitmq'
+                read_only: false
+        ports:
+            -   target: 15672
+                published: '${QUEUE_MANAGEMENT_PORT:-15672}'
+                protocol: 'tcp'
+                mode: 'host'
+
+    workers:
+        command: ['php', 'bin/console', 'messenger:consume']
+
     redis:
         volumes:
             # Use a volume for data during development instead of messing with
@@ -37,6 +55,8 @@ services:
 
 volumes:
     database:
+        driver: 'local'
+    queue:
         driver: 'local'
     redis:
         driver: 'local'
