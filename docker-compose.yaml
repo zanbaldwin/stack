@@ -77,6 +77,21 @@ services:
             -   'dbpass'
         logging: *default-logging
 
+    migrate:
+        image: 'zanbaldwin/stack/migrate:${VERSION:-latest}'
+        build:
+            context: './build/docker/migrate'
+            args: {}
+        depends_on: [ 'database' ]
+        volumes:
+            - type: bind
+              source: './migrations'
+              target: '/migrations'
+              read_only: true
+        env_file:
+            - './.env'
+        logging: *default-logging
+
     redis:
         image: 'zanbaldwin/stack/redis:${VERSION:-latest}'
         build:
