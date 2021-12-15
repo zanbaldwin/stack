@@ -90,8 +90,8 @@ services:
                 source: './migrations'
                 target: '/migrations'
                 read_only: true
-        env_file:
-            -   './.env'
+        environment:
+            DATABASE_URL: '${DATABASEE_URL:-mysql://root@database/main}'
         logging: *default-logging
 
     queue:
