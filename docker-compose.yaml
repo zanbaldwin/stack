@@ -91,7 +91,10 @@ services:
                 target: '/migrations'
                 read_only: true
         environment:
-            DATABASE_URL: '${DATABASEE_URL:-mysql://root@database/main}'
+            DATABASE_URL: '${DATABASE_URL:-mysql://root@database/main}'
+            PASSWORD_SECRET_NAME: 'dbpass'
+        secrets:
+            -   'dbpass'
         logging: *default-logging
 
     queue:

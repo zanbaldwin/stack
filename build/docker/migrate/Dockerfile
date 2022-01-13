@@ -26,7 +26,7 @@ RUN    apk add --no-cache --virtual .tini-build-deps cmake gcc git libc-dev make
     && apk del '.tini-build-deps'
 ENTRYPOINT [ "/tini", "--" ]
 
-RUN apk add --no-cache --virtual .migrate-runtime-deps mysql-client bash
+RUN apk add --no-cache --virtual .migrate-runtime-deps bash mysql-client mariadb-connector-c
 COPY --from="builder" "/go/bin/migrate" "/sbin/migrate"
 COPY --from="builder" "/sbin/dbenv" "/sbin/dbenv"
 COPY "./entrypoint.sh" "/entrypoint.sh"

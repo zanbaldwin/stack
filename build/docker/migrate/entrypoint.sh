@@ -1,5 +1,16 @@
 #!/bin/bash
 
+# @param $1 name of the run secret.
+# @param $2 default fallback value.
+function run_secret {
+    if [ -f "/run/secrets/$1" ]; then
+        echo "$(cat "/run/secrets/$1" | tr -d '[:space:]')"
+    fi
+    echo "$2"
+}
+
+# @param $1 max number of retry attempts.
+# @params   command to make repeated attempts to execute successfully.
 function retry {
     local MAX_ATTEMPTS=$1
     shift
@@ -20,6 +31,8 @@ function retry {
 
 function migrate {
     eval $(dbenv "$1") || { echo "Could not parse database information from database DSN." >&2; exit 2; }
+    # If a runtime secret has been passed, use that instead of what was in the DSN.
+    export DB_PASS="$(run_secret "${PASSWORD_SECRET_NAME}" "${DB_PASS}")"
     # Retry every 5 seconds for a maximum of 18 times (90 seconds total). If MySQL
     # isn't up by then you should probably investigate.
     retry 18 mysql \
