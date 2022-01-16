@@ -15,6 +15,7 @@ THIS_MAKEFILE:=$(notdir $(THIS_MAKEFILE_PATH))
 
 DB_NAME := "main"
 DB_SERVICE := "database"
+DB_S3_BUCKET := "stack"
 
 usage:
 > @grep -E '(^[a-zA-Z_-]+:\s*?##.*$$)|(^##)' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.?## "}; {printf "\033[32m %-30s\033[0m%s\n", $$1, $$2}' | sed -e 's/\[32m ## /[33m/'
@@ -27,22 +28,65 @@ vars:
 .PHONY: vars
 .SILENT: vars
 
+require-root:
+> [ "$$(id -u)" == "0" ] || { echo "This command must be run as root. Please retry with sudo."; exit 1; }
+.PHONY: require-root
+.SILENT: require-root
+
+require-docker:
+> command -v "docker" >/dev/null 2>&1 || { echo >&2 "Docker client required for command not found (PATH: \"$${PATH}\")."; exit 1; }
+> docker info >/dev/null 2>&1 || { echo >&2 "Docker daemon unavailable. Perhaps retry as root/sudo?"; exit; }
+> command -v "docker-compose" >/dev/null 2>&1 || { echo >&2 "Docker Compose required for command not found (PATH: \"$${PATH}\")."; exit 1; }
+.PHONY: require-docker
+.SILENT: require-docker
+
+## Server Setup
+
+install-docker: ## Installs Docker on Ubuntu
+install-docker: require-root
+> command -v "docker" >/dev/null 2>&1 && { echo >&2 "Docker already installed. Installation cancelled."; exit 1; } || true
+> apt-get remove -y docker docker-engine docker.io containerd runc || true
+> apt-get update -y
+> apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release
+> curl -fsSL "https://download.docker.com/linux/ubuntu/gpg" | sudo gpg --dearmor -o "/usr/share/keyrings/docker-archive-keyring.gpg"
+> echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $$(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list
+> apt update -y
+> apt-get install -y docker-ce docker-ce-cli containerd.io
+> command -v "docker-compose" >/dev/null 2>&1 && { echo ""; echo >&2 "Compose already installed. Docker installed, but Compose installation cancelled."; exit 1; } || true
+# The following command installs v2.2.3 because I can't figure out a way to detect the latest version. Check for that at:
+# https://github.com/docker/compose/releases/latest
+> export COMPOSE_VERSION="2.2.3"
+> curl -L "https://github.com/docker/compose/releases/download/$${COMPOSE_VERSION}/docker-compose-$$(uname -s)-$$(uname -m)" -o "/usr/local/bin/docker-compose"
+> chmod +x /usr/local/bin/docker-compose
+.PHONY: install-docker
+.SILENT: install-docker
+
+install-letsencrypt: ## Installs Let's Encrypt client on Ubuntu
+install-letsencrypt: require-root
+> command -v "letsencrypt" >/dev/null 2>&1 && { echo >&2 "Let's Encrypt already installed. Installation cancelled."; exit 1; } || true
+> command -v "certbot" >/dev/null 2>&1 && { echo >&2 "Let's Encrypt already installed. Installation cancelled."; exit 1; } || true
+> snap refresh core
+> snap install --classic certbot
+> ln -s "/snap/bin/certbot" "/usr/local/bin/certbot"
+.PHONY: install-letsencrypt
+.SILENT: install-letsencrypt
+
 ## Building
 
 enable-https: ## Installs an SSL Certificate for the Domain
-enable-https:
+enable-https: require-root require-docker
 > export $$(echo "$$(cat "$(THIS_DIR)/.env" | sed 's/#.*//g'| xargs)")
 > [ -z "$${DOMAIN}" ] && { echo >&2 "Could not determine domain from environment file."; exit 1; }
-> sudo docker-compose -f "$(THIS_DIR)/docker-compose.yaml" down
-> sudo mkdir -p "/etc/letsencrypt/challenges"
-> sudo docker-compose -f "$(THIS_DIR)/docker-compose.yaml" run -d --name "acme" server nginx -c "/etc/nginx/acme.conf"
-> sudo certbot certonly --webroot \
+> docker-compose -f "$(THIS_DIR)/docker-compose.yaml" down
+> mkdir -p "/etc/letsencrypt/challenges"
+> docker-compose -f "$(THIS_DIR)/docker-compose.yaml" run -d --name "acme" server nginx -c "/etc/nginx/acme.conf"
+> certbot certonly --webroot \
     --webroot-path="/etc/letsencrypt/challenges" \
     --cert-name="$${DOMAIN}" \
     -d "$${DOMAIN}" \
     -d "www.$${DOMAIN}"
-> sudo openssl dhparam -out "/etc/letsencrypt/dhparam.pem" 4096
-> sudo docker-compose -f "$(THIS_DIR)/docker-compose.yaml" down
+> openssl dhparam -out "/etc/letsencrypt/dhparam.pem" 4096
+> docker-compose -f "$(THIS_DIR)/docker-compose.yaml" down
 .PHONY: enable-https
 .SILENT: enable-https
 
@@ -87,20 +131,20 @@ password:
 ## Maintenance
 
 renew-certs: ## Re-installs SSL Certificates that near expiry and due for renewal
-renew-certs:
+renew-certs: require-root require-docker
 > echo >&2 "--------------------------------------------------------------------------------"
 > date >&2
-> certbot renew
 # CRON by default does not set any useful environment variables, Docker Compose
 # is installed to a non-standard location so we have to specify that.
 > export PATH="$${PATH:-"/bin:/sbin:/usr/bin"}:/usr/local/bin"
+> certbot renew
 # Nginx has to be restarted in order to use the new certificates.
 > docker-compose -f "$(THIS_DIR)/docker-compose.yaml" restart server
 .PHONY: renew-certs
 .SILENT: renew-certs
 
 database-backup: ## Create a backup of the database and upload to S3
-database-backup:
+database-backup: require-docker
 # CRON by default does not set any useful environment variables, Docker Compose
 # is installed to a non-standard location so we have to specify that.
 > export PATH="$${PATH:-"/bin:/usr/bin"}:/usr/local/bin"
@@ -124,14 +168,70 @@ database-backup:
 > bzip2 --compress --best --stdout < "/tmp/$${DB_DUMP_FILENAME}" > "/tmp/$${DB_DUMP_COMPRESSED}" && { \
     rm "/tmp/$${DB_DUMP_FILENAME}" || true; \
 } || { \
-    echo >&2 "Could not compress database dump, continuing to upload uncompressed file to S3."; \
+    echo >&2 "Could not compress database dump, continuing to use uncompressed file instead."; \
     export DB_DUMP_COMPRESSED="$${DB_DUMP_FILENAME}"; \
 }
-> mkdir -p "$(THIS_DIR)/var/dump" && cp "/tmp/$${DB_DUMP_COMPRESSED}" "$(THIS_DIR)/var/dump/$${DB_DUMP_COMPRESSED}" || { \
-    echo >&2 "Could move database dump to \"$(THIS_DIR)/var/dump/$${DB_DUMP_COMPRESSED}\"."; \
-    echo >&2 "Please see temporary dump file \"/tmp/$${DB_DUMP_COMPRESSED}\"."; \
-    exit 4; \
+> docker run --rm --user="$$(id -u 2>/dev/null)" --env "AWS_ACCESS_KEY_ID" --env "AWS_SECRET_ACCESS_KEY" --volume "/tmp:/tmp:ro" amazon/aws-cli s3 cp "/tmp/$${DB_DUMP_COMPRESSED}" "s3://$(DB_S3_BUCKET)/$${DB_DUMP_COMPRESSED}" >/dev/null && { \
+    echo >&2 "Database has been backup and uploaded to \"s3://$(DB_S3_BUCKET)/$${DB_DUMP_COMPRESSED}\"."; \
+} || { \
+    echo >&2 "Could not upload database backup to S3 bucket \"$(DB_S3_BUCKET)\"."; \
+    mkdir -p "$(THIS_DIR)/var/dump" && cp "/tmp/$${DB_DUMP_COMPRESSED}" "$(THIS_DIR)/var/dump/$${DB_DUMP_COMPRESSED}" && { \
+        echo >&2 "Database backup has instead been saved to local save directory: \"$(THIS_DIR)/var/dump/$${DB_DUMP_COMPRESSED}\"."; \
+    } || { \
+        echo >&2 "Also could move database dump to local save directory \"$(THIS_DIR)/var/dump/\"."; \
+        echo >&2 "Please see temporary dump file \"/tmp/$${DB_DUMP_COMPRESSED}\" for manual saving."; \
+        exit 4; \
+    }
 }
 > rm "/tmp/$${DB_DUMP_COMPRESSED}" || true
 .PHONY: database-backup
 .SILENT: database-backup
+
+restore-backup: ## Restore the Database from a Backup File
+restore-backup: require-docker
+> whiptail --title="WARNING" --yesno --defaultno "THIS WILL COMPLETELY DELETE YOUR EXISTING DATABASE! Are you sure?" 8 60 || { exit 1; }
+> whiptail --title "Location" --yesno --yes-button "Local Filesystem" --no-button "S3 Bucket" "Does the backup exist on the local filesystem, or is it stored in the Amazon S3 bucket \"$(DB_S3_BUCKET)\"?" 8 60 && { \
+    export BACKUP_FILE=$$(whiptail --inputbox "Please enter the full path to the backup file that is located on the local filesystem:" 8 60 3>&1 1>&2 2>&3); \
+    [ -f "$${BACKUP_FILE}" ] || { echo >&2 "$$(tput setaf 1)Backup file \"$${BACKUP_FILE}\" does not exist.$$(tput sgr0)"; exit 1; }; \
+} || { \
+    export S3_FILE=$$(whiptail --inputbox "Please enter the name/path of the file from the \"$(DB_S3_BUCKET)\" S3 bucket you'd like to use." 8 60  3>&1 1>&2 2>&3); \
+    export BACKUP_FILE="$$(mktemp)"; \
+    docker run --rm -it --user="$$(id -u 2>/dev/null)" --env "AWS_ACCESS_KEY_ID" --env "AWS_SECRET_ACCESS_KEY" --volume "/tmp:/tmp" "amazon/aws-cli" s3 cp "s3://$(DB_S3_BUCKET)/$${S3_FILE}" "$${BACKUP_FILE}" || { \
+        echo >&2 "$$(tput setaf 1)Could not download database backup file \"$${S3_FILE}\" from S3 bucket \"$(DB_S3_BUCKET)\".$$(tput sgr0)"; \
+        rm "$${BACKUP_FILE}" || true; \
+        exit 2; \
+    }; \
+}
+> export TEMP_FILE="$$(mktemp)"
+> export BACKUP_FILE_IMPORT="$${TEMP_FILE}"
+> bzip2 --decompress --stdout < "$${BACKUP_FILE}" > "$${BACKUP_FILE_IMPORT}" || { \
+    echo >&2 "Could not decompress backup file, continuing with the assumption it is not compressed."; \
+    export BACKUP_FILE_IMPORT="$${BACKUP_FILE}"; \
+    rm "$${TEMP_FILE}" || true; \
+}
+> docker-compose -f "$(THIS_DIR)/docker-compose.yaml" exec -e "MYSQL_PWD=$$(cat '$(THIS_DIR)/.secrets/dbpass' | tr -d '\n\r')" "database" mysql -u"root" -e "DROP DATABASE IF EXISTS \`$(DB_NAME)\`; CREATE DATABASE IF NOT EXISTS \`$(DB_NAME)\`;"
+> docker-compose -f "$(THIS_DIR)/docker-compose.yaml" exec -T -e "MYSQL_PWD=$$(cat '$(THIS_DIR)/.secrets/dbpass' | tr -d '\n\r')" "database" mysql -u"root" "$(DB_NAME)" < "$${BACKUP_FILE_IMPORT}" || { \
+    echo >&2 "$$(tput setaf 1)Could not import database backup file.$$(tput sgr0)"; \
+    echo >&2 "$$(tput setaf 1)You now have no database! Go find a working backup quickly!$$(tput sgr0)"; \
+    rm "$${TEMP_FILE}" || true; \
+    exit 1; \
+}
+> rm "$${TEMP_FILE}" || true
+> echo >&2 "$$(tput setaf 2)Database has been restored from backup, double check that it's working!$$(tput sgr0)"
+.PHONY: restore-backup
+.SILENT: restore-backup
+
+install-cron: ## Install a CRON job file to automate: renew-certs, database-backup
+install-cron: require-root
+> export CRONTAB="/etc/cron.daily/website-stack"
+> export COMMANDS="renew-certs database-backup"
+> rm -f "$${CRONTAB}"
+> touch "$${CRONTAB}"
+> echo "#!/bin/sh" > "$${CRONTAB}"
+> for COMMAND in $${COMMANDS}; do
+>     echo "(cd \"$(THIS_DIR)\"; make -f \"$(THIS_DIR)/$(THIS_MAKEFILE)\" $${COMMAND} >\"/var/log/cron-stack-$${COMMAND}.log\" 2>&1)" >> "$${CRONTAB}"
+> done
+> echo "CRON job installed for commands \"$${COMMANDS}\" to \"$${CRONTAB}\"."
+> echo "Please make sure this file will be loaded and run by the system CRON (perhaps check \"/etc/crontab\")."
+.PHONY: install-cron
+.SILENT: install-cron
