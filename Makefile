@@ -17,6 +17,8 @@ DB_NAME := "main"
 DB_SERVICE := "database"
 DB_S3_BUCKET := "stack"
 
+VM_NAME := "stack-k8s-master"
+
 usage:
 > @grep -E '(^[a-zA-Z_-]+:\s*?##.*$$)|(^##)' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.?## "}; {printf "\033[32m %-30s\033[0m%s\n", $$1, $$2}' | sed -e 's/\[32m ## /[33m/'
 .PHONY: usage
@@ -127,6 +129,16 @@ password:
 > echo >&2 "$$(tput setaf 2)Database password generated and placed in file \"$(THIS_DIR)/build/.secrets/dbpass\".$$(tput sgr0)"
 .PHONY: password
 .SILENT: password
+
+vm: ## Create a Kubernetes VM on the local machine
+vm:
+> [ -f "$(THIS_DIR)/build/.secrets/vm-key" ] || ssh-keygen -t ed25519 -C "Virtual Machine SSH Key" -f "$(THIS_DIR)/build/.secrets/vm-key" -N "" -q
+> multipass exec "$(VM_NAME)" -- true || multipass start "$(VM_NAME)" || { \
+    cat build/k8s/k3s-cloud-init.yaml | sed "s|#VMKEY#|$(cat build/.secrets/vm-key.pub | tr -d '\n\r')|" | multipass launch -vv --name "$(VM_NAME)" --cloud-init - --cpus 1 --disk 4G --mem 1G "lts"; \
+}
+> multipass mount "$(THIS_DIR)" "$(VM_NAME):/srv"
+.PHONY: vm
+.SILENT: vm
 
 ## Maintenance
 
