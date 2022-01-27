@@ -95,7 +95,7 @@ for COMPOSER_BINARY in "${APP_DIR}/bin/composer.phar" "$(command -v composer 2>/
             echo "$(tput setaf 2)Creating Composer cache directory...$(tput sgr0)"
             mkdir -p "${COMPOSER_HOST_CACHE}"
         fi
-        COMPOSER="--volume \"${COMPOSER_BINARY}:/bin/composer:ro\" --volume \"${COMPOSER_HOST_CACHE}:${COMPOSER_HOME}\"  -e \"COMPOSER_HOME=${COMPOSER_HOME}\""
+        COMPOSER="--volume \"${COMPOSER_BINARY}:/bin/composer:ro\" --volume \"${COMPOSER_HOST_CACHE}:${COMPOSER_HOME}\" -e \"COMPOSER_HOME=${COMPOSER_HOME}\""
         # Hopefully at this point, the contents of the variable $COMPOSER should look something like:
         #     --volume "/usr/local/bin/composer:/bin/composer:ro" --volume "~/.config/composer:/.composer"
         # Break from the loop (we don't want to overwrite the flag string we just constructed).
