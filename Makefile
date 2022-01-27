@@ -95,22 +95,22 @@ mock-https:
 > command -v "mkcert" >/dev/null 2>&1 || { echo >&2 "Please install MkCert for Development."; exit 1; }
 > export $$(echo "$$(cat "$(THIS_DIR)/.env" | sed 's/#.*//g'| xargs)")
 > [ -z "$${DOMAIN}" ] && { echo >&2 "Could not determine domain from environment file."; exit 1; }
-> mkdir -p "$(THIS_DIR)/build/ssl/challenges"
-> mkdir -p "$(THIS_DIR)/build/ssl/live/$${DOMAIN}"
-> (cd "$(THIS_DIR)/build/ssl"; mkcert "localhost" "$${DOMAIN}" "server" "127.0.0.1")
+> mkdir -p "$(THIS_DIR)/build/.secrets/ssl/challenges"
+> mkdir -p "$(THIS_DIR)/build/.secrets/ssl/live/$${DOMAIN}"
+> (cd "$(THIS_DIR)/build/.secrets/ssl"; mkcert "localhost" "$${DOMAIN}" "server" "127.0.0.1")
 > mkcert \
-    -cert-file "$(THIS_DIR)/build/ssl/live/$${DOMAIN}/fullchain.pem" \
-    -key-file "$(THIS_DIR)/build/ssl/live/$${DOMAIN}/privkey.pem" \
+    -cert-file "$(THIS_DIR)/build/.secrets/ssl/live/$${DOMAIN}/fullchain.pem" \
+    -key-file "$(THIS_DIR)/build/.secrets/ssl/live/$${DOMAIN}/privkey.pem" \
     "localhost" \
     "127.0.0.1" \
     "$${DOMAIN}" \
     "server" \
     "varnish"
-> cp "$$(mkcert -CAROOT)/rootCA.pem" "$(THIS_DIR)/build/ssl/ca.pem"
-> mv "$(THIS_DIR)/build/ssl/localhost+3.pem" "$(THIS_DIR)/build/ssl/live/$${DOMAIN}/fullchain.pem"
-> cp "$(THIS_DIR)/build/ssl/live/$${DOMAIN}/fullchain.pem" "$(THIS_DIR)/build/ssl/live/$${DOMAIN}/chain.pem"
-> mv "$(THIS_DIR)/build/ssl/localhost+3-key.pem" "$(THIS_DIR)/build/ssl/live/$${DOMAIN}/privkey.pem"
-> openssl dhparam -out "$(THIS_DIR)/build/ssl/dhparam.pem" 1024
+> cp "$$(mkcert -CAROOT)/rootCA.pem" "$(THIS_DIR)/build/.secrets/ssl/ca.pem"
+> mv "$(THIS_DIR)/build/.secrets/ssl/localhost+3.pem" "$(THIS_DIR)/build/.secrets/ssl/live/$${DOMAIN}/fullchain.pem"
+> cp "$(THIS_DIR)/build/.secrets/ssl/live/$${DOMAIN}/fullchain.pem" "$(THIS_DIR)/build/.secrets/ssl/live/$${DOMAIN}/chain.pem"
+> mv "$(THIS_DIR)/build/.secrets/ssl/localhost+3-key.pem" "$(THIS_DIR)/build/.secrets/ssl/live/$${DOMAIN}/privkey.pem"
+> openssl dhparam -out "$(THIS_DIR)/build/.secrets/ssl/dhparam.pem" 1024
 .PHONY: mock-https
 .SILENT: mock-https
 
@@ -181,7 +181,7 @@ database-backup: require-docker
         echo >&2 "Also could move database dump to local save directory \"$(THIS_DIR)/var/dump/\"."; \
         echo >&2 "Please see temporary dump file \"/tmp/$${DB_DUMP_COMPRESSED}\" for manual saving."; \
         exit 4; \
-    }
+    } \
 }
 > rm "/tmp/$${DB_DUMP_COMPRESSED}" || true
 .PHONY: database-backup
