@@ -10,9 +10,10 @@ x-logging:
 services:
 
     server:
-        image: 'zanbaldwin/stack/server:${VERSION:-latest}'
+        image: 'zanbaldwin/stack/server/production:${VERSION:-latest}'
         build:
             context: './build/docker/server'
+            target: 'production'
             args:
                 NGINX_VERSION: '1.21.4'
                 DOMAIN: '${DOMAIN:-localhost}'
@@ -40,9 +41,10 @@ services:
         logging: *default-logging
 
     php:
-        image: 'zanbaldwin/stack/php:${VERSION:-latest}'
+        image: 'zanbaldwin/stack/php/production:${VERSION:-latest}'
         build:
             context: './build/docker/php'
+            target: 'production'
             args:
                 PHP_VERSION: '8.1'
                 GOLANG_VERSION: '1.16.5'
@@ -60,9 +62,10 @@ services:
         logging: *default-logging
 
     database:
-        image: 'zanbaldwin/stack/database:${VERSION:-latest}'
+        image: 'zanbaldwin/stack/database/production:${VERSION:-latest}'
         build:
             context: './build/docker/database'
+            target: 'production'
             args:
                 MYSQL_VERSION: '8.0.27'
         restart: 'unless-stopped'
@@ -79,9 +82,10 @@ services:
         logging: *default-logging
 
     migrate:
-        image: 'zanbaldwin/stack/migrate:${VERSION:-latest}'
+        image: 'zanbaldwin/stack/migrate/production:${VERSION:-latest}'
         build:
             context: './build/docker/migrate'
+            target: 'production'
             args: {}
         depends_on:
             -   'database'
@@ -109,9 +113,10 @@ services:
         logging: *default-logging
 
     workers:
-        image: 'zanbaldwin/stack/php:${VERSION:-latest}'
+        image: 'zanbaldwin/stack/php/production:${VERSION:-latest}'
         build:
             context: './build/docker/php'
+            target: 'production'
             args:
                 PHP_VERSION: '8.1'
                 GOLANG_VERSION: '1.16.5'
@@ -130,9 +135,10 @@ services:
         logging: *default-logging
 
     redis:
-        image: 'zanbaldwin/stack/redis:${VERSION:-latest}'
+        image: 'zanbaldwin/stack/redis/production:${VERSION:-latest}'
         build:
             context: './build/docker/redis'
+            target: 'production'
             args:
                 REDIS_VERSION: '6.2.6'
         restart: 'unless-stopped'

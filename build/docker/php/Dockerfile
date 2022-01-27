@@ -124,3 +124,6 @@ WORKDIR '/srv'
 ## Expose PHP-FPM over FastCGI
 EXPOSE 9000
 CMD [ "php-fpm", "--nodaemonize" ]
+
+FROM development AS production
+MAINTAINER Zan Baldwin "hello@zanbaldwin.com"

@@ -7,7 +7,7 @@ RUN    apk add --no-cache --virtual .migrate-build-deps git \
     && go install -tags 'mysql' "github.com/golang-migrate/migrate/v4/cmd/migrate@${MIGRATE_VERSION}" \
     && (cd '/go/src/github.com/zanbaldwin/dbenv'; go mod init; go build -o '/sbin/dbenv')
 
-FROM "alpine:3.15" AS clitool
+FROM "alpine:3.15" AS development
 MAINTAINER Zan Baldwin "hello@zanbaldwin.com"
 
 # Compiles a statically-linked version of the init (PID 1) process bundled with Docker since v1.13 (API v1.25).
@@ -32,3 +32,6 @@ COPY --from="builder" "/sbin/dbenv" "/sbin/dbenv"
 COPY "./entrypoint.sh" "/entrypoint.sh"
 ENV DATABASE_URL "mysql://root@database/stack"
 CMD [ "bash", "/entrypoint.sh" ]
+
+FROM development AS production
+MAINTAINER Zan Baldwin "hello@zanbaldwin.com"

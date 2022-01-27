@@ -45,3 +45,6 @@ EXPOSE 80
 EXPOSE 443
 WORKDIR "/srv/public"
 CMD [ "nginx", "-g", "daemon off;" ]
+
+FROM development AS production
+MAINTAINER Zan Baldwin "hello@zanbaldwin.com"

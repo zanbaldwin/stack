@@ -6,6 +6,9 @@ version: '3.8'
 services:
 
     server:
+        image: 'zanbaldwin/stack/server/development:${VERSION:-latest}'
+        build:
+            target: 'development'
         volumes:
             # Use self-generated certificates during development.
             -   type: 'bind'
@@ -18,7 +21,9 @@ services:
                 read_only: true
 
     php:
+        image: 'zanbaldwin/stack/php/development:${VERSION:-latest}'
         build:
+            target: 'development'
             args:
                 ENABLE_XDEBUG: 'yes'
         extra_hosts:
@@ -26,6 +31,9 @@ services:
             - 'host.docker.internal:host-gateway'
 
     database:
+        image: 'zanbaldwin/stack/database/development:${VERSION:-latest}'
+        build:
+            target: 'development'
         volumes:
             # Use a volume for data during development instead of messing with
             # system directories.
@@ -33,6 +41,11 @@ services:
                 source: 'database'
                 target: '/var/lib/mysql'
                 read_only: false
+
+    migrate:
+        image: 'zanbaldwin/stack/migrate/development:${VERSION:-latest}'
+        build:
+            target: 'development'
 
     queue:
         image: 'rabbitmq:3.9.11-management-alpine'
@@ -50,7 +63,9 @@ services:
                 mode: 'host'
 
     workers:
+        image: 'zanbaldwin/stack/php/development:${VERSION:-latest}'
         build:
+            target: 'development'
             args:
                 ENABLE_XDEBUG: 'yes'
         extra_hosts:
@@ -59,6 +74,9 @@ services:
         command: ['php', 'bin/console', 'messenger:consume']
 
     redis:
+        image: 'zanbaldwin/stack/redis/development:${VERSION:-latest}'
+        build:
+            target: 'development'
         volumes:
             # Use a volume for data during development instead of messing with
             # system directories.
