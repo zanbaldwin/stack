@@ -17,6 +17,14 @@ services:
                 target: '/etc/ssl/certs/ca-certificates.crt'
                 read_only: true
 
+    php:
+        build:
+            args:
+                ENABLE_XDEBUG: 'yes'
+        extra_hosts:
+            # Add an entry in /etc/hosts to point to the host machine (for XDebug).
+            - 'host.docker.internal:host-gateway'
+
     database:
         volumes:
             # Use a volume for data during development instead of messing with
@@ -42,6 +50,12 @@ services:
                 mode: 'host'
 
     workers:
+        build:
+            args:
+                ENABLE_XDEBUG: 'yes'
+        extra_hosts:
+            # Add an entry in /etc/hosts to point to the host machine (for XDebug).
+            - 'host.docker.internal:host-gateway'
         command: ['php', 'bin/console', 'messenger:consume']
 
     redis:
