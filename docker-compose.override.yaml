@@ -26,6 +26,8 @@ services:
             target: 'development'
             args:
                 ENABLE_XDEBUG: 'yes'
+        environment:
+            PHP_IDE_CONFIG: 'serverName=${PHPSTORM_SERVER_NAME:-stack}'
         extra_hosts:
             # Add an entry in /etc/hosts to point to the host machine (for XDebug).
             - 'host.docker.internal:host-gateway'
@@ -68,6 +70,8 @@ services:
             target: 'development'
             args:
                 ENABLE_XDEBUG: 'yes'
+        environment:
+            PHP_IDE_CONFIG: 'serverName=${PHPSTORM_SERVER_NAME:-stack}'
         extra_hosts:
             # Add an entry in /etc/hosts to point to the host machine (for XDebug).
             - 'host.docker.internal:host-gateway'
