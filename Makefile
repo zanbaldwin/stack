@@ -8,23 +8,29 @@ ifeq ($(origin .RECIPEPREFIX), undefined)
   $(error This Make does not support .RECIPEPREFIX; Please use GNU Make 4.0 or later)
 endif
 .RECIPEPREFIX = >
-
 THIS_MAKEFILE_PATH:=$(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))
 THIS_DIR:=$(shell cd $(dir $(THIS_MAKEFILE_PATH));pwd)
 THIS_MAKEFILE:=$(notdir $(THIS_MAKEFILE_PATH))
 
+# ================================ #
+# START PROJECT-SPECIFIC VARIABLES #
+# ================================ #
+
 DB_NAME := "main"
 DB_SERVICE := "database"
 DB_S3_BUCKET := "stack"
-
+CRON_NAME := "website-stack"
 VM_NAME := "stack-k8s-master"
+
+# ============================== #
+# END PROJECT-SPECIFIC VARIABLES #
+# ============================== #
 
 usage:
 > @grep -E '(^[a-zA-Z_-]+:\s*?##.*$$)|(^##)' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.?## "}; {printf "\033[32m %-30s\033[0m%s\n", $$1, $$2}' | sed -e 's/\[32m ## /[33m/'
 .PHONY: usage
 .SILENT: usage
 
-vars: ## Display Current Variables Set
 vars:
 > @$(foreach V,$(sort $(.VARIABLES)), $(if $(filter-out environment% default automatic, $(origin $V)),$(warning $V = $(value $V))))
 .PHONY: vars
@@ -144,8 +150,6 @@ vm:
 
 renew-certs: ## Re-installs SSL Certificates that near expiry and due for renewal
 renew-certs: require-root require-docker
-> echo >&2 "--------------------------------------------------------------------------------"
-> date >&2
 # CRON by default does not set any useful environment variables, Docker Compose
 # is installed to a non-standard location so we have to specify that.
 > export PATH="$${PATH:-"/bin:/sbin:/usr/bin"}:/usr/local/bin"
@@ -162,8 +166,6 @@ database-backup: require-docker
 > export PATH="$${PATH:-"/bin:/usr/bin"}:/usr/local/bin"
 # Database backup is meant to be run by CRON and output saved to a log file. Use ANSI only (no colours).
 > export DB_DUMP_FILENAME="database-$$(date -u '+%Y%m%dT%H%m%SZ').sql"
-> echo >&2 "--------------------------------------------------------------------------------"
-> date >&2
 > command -v docker >/dev/null 2>&1 || { echo >&2 "Command \"docker\" not found in \$$PATH. Make sure CRON has the correct environment variables set."; exit 1; }
 > command -v docker-compose >/dev/null 2>&1 || { echo >&2 "Command \"docker-compose\" not found in \$$PATH. Make sure CRON has the correct environment variables set."; exit 1; }
 > command -v bzip2 >/dev/null 2>&1 || { echo >&2 "Command \"bzip2\" not found in \$$PATH. Make sure CRON has the correct environment variables set."; exit 1; }
@@ -184,7 +186,7 @@ database-backup: require-docker
     export DB_DUMP_COMPRESSED="$${DB_DUMP_FILENAME}"; \
 }
 > docker run --rm --user="$$(id -u 2>/dev/null)" --env "AWS_ACCESS_KEY_ID" --env "AWS_SECRET_ACCESS_KEY" --volume "/tmp:/tmp:ro" amazon/aws-cli s3 cp "/tmp/$${DB_DUMP_COMPRESSED}" "s3://$(DB_S3_BUCKET)/$${DB_DUMP_COMPRESSED}" >/dev/null && { \
-    echo >&2 "Database has been backup and uploaded to \"s3://$(DB_S3_BUCKET)/$${DB_DUMP_COMPRESSED}\"."; \
+    echo >&2 "Database has been backed up and uploaded to \"s3://$(DB_S3_BUCKET)/$${DB_DUMP_COMPRESSED}\"."; \
 } || { \
     echo >&2 "Could not upload database backup to S3 bucket \"$(DB_S3_BUCKET)\"."; \
     mkdir -p "$(THIS_DIR)/var/dump" && cp "/tmp/$${DB_DUMP_COMPRESSED}" "$(THIS_DIR)/var/dump/$${DB_DUMP_COMPRESSED}" && { \
@@ -235,15 +237,16 @@ restore-backup: require-docker
 
 install-cron: ## Install a CRON job file to automate: renew-certs, database-backup
 install-cron: require-root
-> export CRONTAB="/etc/cron.daily/website-stack"
+> export CRONTAB="/etc/cron.daily/$(CRON_NAME)"
 > export COMMANDS="renew-certs database-backup"
-> rm -f "$${CRONTAB}"
+> rm -f "$${CRONTAB}" || true
 > touch "$${CRONTAB}"
 > echo "#!/bin/sh" > "$${CRONTAB}"
 > for COMMAND in $${COMMANDS}; do
->     echo "(cd \"$(THIS_DIR)\"; make -f \"$(THIS_DIR)/$(THIS_MAKEFILE)\" $${COMMAND} >\"/var/log/cron-stack-$${COMMAND}.log\" 2>&1)" >> "$${CRONTAB}"
+>     echo "(cd \"$(THIS_DIR)\"; date; make -f \"$(THIS_DIR)/$(THIS_MAKEFILE)\" \"$${COMMAND}\"; echo;) >>\"/var/log/cron-stack-$${COMMAND}.log\" 2>&1" >> "$${CRONTAB}"
 > done
 > echo "CRON job installed for commands \"$${COMMANDS}\" to \"$${CRONTAB}\"."
 > echo "Please make sure this file will be loaded and run by the system CRON (perhaps check \"/etc/crontab\")."
+> command -v "anacron" >/dev/null 2>&1 || { echo "It is recommended to install the system package \"anacron\" or the configured CRON job may not execute correctly on Ubuntu."; }
 .PHONY: install-cron
 .SILENT: install-cron
