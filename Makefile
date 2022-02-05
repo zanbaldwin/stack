@@ -115,9 +115,7 @@ mock-https:
     "server" \
     "varnish"
 > cp "$$(mkcert -CAROOT)/rootCA.pem" "$(THIS_DIR)/build/.secrets/ssl/ca.pem"
-> mv "$(THIS_DIR)/build/.secrets/ssl/localhost+3.pem" "$(THIS_DIR)/build/.secrets/ssl/live/$${DOMAIN}/fullchain.pem"
 > cp "$(THIS_DIR)/build/.secrets/ssl/live/$${DOMAIN}/fullchain.pem" "$(THIS_DIR)/build/.secrets/ssl/live/$${DOMAIN}/chain.pem"
-> mv "$(THIS_DIR)/build/.secrets/ssl/localhost+3-key.pem" "$(THIS_DIR)/build/.secrets/ssl/live/$${DOMAIN}/privkey.pem"
 > openssl dhparam -out "$(THIS_DIR)/build/.secrets/ssl/dhparam.pem" 1024
 .PHONY: mock-https
 .SILENT: mock-https
