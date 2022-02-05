@@ -154,8 +154,10 @@ renew-certs: require-root require-docker
 # is installed to a non-standard location so we have to specify that.
 > export PATH="$${PATH:-"/bin:/sbin:/usr/bin"}:/usr/local/bin"
 > certbot renew
-# Nginx has to be restarted in order to use the new certificates.
-> docker-compose -f "$(THIS_DIR)/docker-compose.yaml" restart server
+# Nginx has to be reloaded in order to use the new certificates.
+> docker-compose -f "$(THIS_DIR)/docker-compose.yaml" exec server nginx -s reload
+# Alternatively (e.g. not using Nginx) just restart the entire server container:
+# > docker-compose -f "$(THIS_DIR)/docker-compose.yaml" restart server
 .PHONY: renew-certs
 .SILENT: renew-certs
 
