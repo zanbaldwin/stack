@@ -35,7 +35,6 @@ services:
                 target: '/etc/letsencrypt'
                 read_only: true
         logging: *default-logging
-        read_only: true
 
     php:
         image: 'zanbaldwin/stack/php/production'
