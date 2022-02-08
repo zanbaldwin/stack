@@ -123,6 +123,15 @@ services:
         secrets: ['dbpass']
         logging: *default-logging
 
+    cron:
+        image: 'zanbaldwin/stack/php/production'
+        restart: 'unless-stopped'
+        command: ['crond', '-f', '-c', '/etc/crontabs']
+        environment:
+            PASSWORD_SECRET_NAME: 'dbpass'
+        secrets: ['dbpass']
+        logging: *default-logging
+
     redis:
         image: 'zanbaldwin/stack/redis/production'
         build:

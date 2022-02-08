@@ -102,6 +102,19 @@ services:
                 target: '/srv'
                 read_only: false
 
+    cron:
+        image: 'zanbaldwin/stack/php/development'
+        command: ['crond', '-f', '-l', '8', '-c', '/etc/crontabs']
+        volumes:
+            -   type: 'bind'
+                source: './'
+                target: '/srv'
+                read_only: false
+            -   type: 'bind'
+                source: './crontabs'
+                target: '/etc/crontabs'
+                read_only: true
+
     redis:
         image: 'zanbaldwin/stack/redis/development'
         build:

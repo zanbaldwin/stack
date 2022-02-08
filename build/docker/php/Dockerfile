@@ -134,6 +134,7 @@ COPY --chown="${PHP_USER}" './build/docker/php/public'       '/srv/public'
 COPY --chown="${PHP_USER}" './build/docker/php/src'          '/srv/src'
 #COPY --chown="${PHP_USER}" './build/docker/php/templates'    '/srv/templates'
 #COPY --chown="${PHP_USER}" './build/docker/php/translations' '/srv/translations'
+COPY --chown="${PHP_USER}" './crontabs'                      '/etc/crontabs'
 ENV APP_ENV="prod"
 RUN    composer install --no-dev --prefer-dist --no-progress --optimize-autoloader --no-interaction --working-dir="/srv" \
     && bin/console --env="prod" cache:clear
