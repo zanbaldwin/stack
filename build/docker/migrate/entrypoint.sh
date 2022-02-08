@@ -45,7 +45,7 @@ function migrate {
     export DB_PASS
     # Retry every 5 seconds for a maximum of 18 times (90 seconds total). If MySQL
     # isn't up by then you should probably investigate.
-    retry 1 mysql \
+    retry 18 mysql \
             "--user=\"${DB_USER}\"" \
             "--password=\"${DB_PASS}\"" \
             "--host=\"${DB_HOST}\"" \
