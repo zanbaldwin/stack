@@ -28,6 +28,10 @@ COPY './build/docker/server/challenges.conf' '/etc/nginx/challenges.conf'
 COPY './build/docker/server/ssl.conf' '/etc/nginx/ssl.conf'
 COPY './build/docker/server/server.conf' '/etc/nginx/conf.d/server.conf'
 
+COPY "./build/docker/server/healthcheck.sh" "/sbin/healthcheck"
+RUN apk add --no-cache --virtual '.healthcheck-runtime-deps' curl
+HEALTHCHECK --interval=10s --timeout=3s --retries=3 CMD [ "sh", "/sbin/healthcheck" ]
+
 # Create a new user with UID#1000 (the UID that the user on the host machine is likely to have).
 # Instruct Nginx to run as that user.
 ARG NGINX_USER="nginx"
