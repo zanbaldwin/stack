@@ -35,6 +35,7 @@ services:
                 target: '/etc/letsencrypt'
                 read_only: true
         logging: *default-logging
+        read_only: true
 
     php:
         image: 'zanbaldwin/stack/php/production'
@@ -55,6 +56,7 @@ services:
             PASSWORD_SECRET_NAME: 'dbpass'
         secrets: ['dbpass']
         logging: *default-logging
+        read_only: true
 
     database:
         image: 'zanbaldwin/stack/database/production'
@@ -89,6 +91,7 @@ services:
             PASSWORD_SECRET_NAME: 'dbpass'
         secrets: [ 'dbpass' ]
         logging: *default-logging
+        read_only: true
 
     queue:
         image: 'rabbitmq:3.9.11-alpine'
@@ -122,6 +125,7 @@ services:
             PASSWORD_SECRET_NAME: 'dbpass'
         secrets: ['dbpass']
         logging: *default-logging
+        read_only: true
 
     cron:
         image: 'zanbaldwin/stack/php/production'
@@ -131,6 +135,7 @@ services:
             PASSWORD_SECRET_NAME: 'dbpass'
         secrets: ['dbpass']
         logging: *default-logging
+        read_only: true
 
     redis:
         image: 'zanbaldwin/stack/redis/production'
