@@ -6,7 +6,7 @@ version: '3.8'
 services:
 
     server:
-        image: 'zanbaldwin/stack/server/development:${VERSION:-latest}'
+        image: 'zanbaldwin/stack/server/development'
         build:
             target: 'development'
         volumes:
@@ -21,7 +21,7 @@ services:
                 read_only: true
 
     php:
-        image: 'zanbaldwin/stack/php/development:${VERSION:-latest}'
+        image: 'zanbaldwin/stack/php/development'
         build:
             target: 'development'
             args:
@@ -33,7 +33,7 @@ services:
             - 'host.docker.internal:host-gateway'
 
     database:
-        image: 'zanbaldwin/stack/database/development:${VERSION:-latest}'
+        image: 'zanbaldwin/stack/database/development'
         build:
             target: 'development'
         volumes:
@@ -45,7 +45,7 @@ services:
                 read_only: false
 
     migrate:
-        image: 'zanbaldwin/stack/migrate/development:${VERSION:-latest}'
+        image: 'zanbaldwin/stack/migrate/development'
         build:
             target: 'development'
 
@@ -65,7 +65,7 @@ services:
                 mode: 'host'
 
     workers:
-        image: 'zanbaldwin/stack/php/development:${VERSION:-latest}'
+        image: 'zanbaldwin/stack/php/development'
         build:
             target: 'development'
             args:
@@ -78,7 +78,7 @@ services:
         command: ['php', 'bin/console', 'messenger:consume']
 
     redis:
-        image: 'zanbaldwin/stack/redis/development:${VERSION:-latest}'
+        image: 'zanbaldwin/stack/redis/development'
         build:
             target: 'development'
         volumes:

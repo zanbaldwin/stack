@@ -10,7 +10,7 @@ x-logging:
 services:
 
     server:
-        image: 'zanbaldwin/stack/server/production:${VERSION:-latest}'
+        image: 'zanbaldwin/stack/server/production'
         build:
             context: './build/docker/server'
             target: 'production'
@@ -41,7 +41,7 @@ services:
         logging: *default-logging
 
     php:
-        image: 'zanbaldwin/stack/php/production:${VERSION:-latest}'
+        image: 'zanbaldwin/stack/php/production'
         build:
             context: './build/docker/php'
             target: 'production'
@@ -62,7 +62,7 @@ services:
         logging: *default-logging
 
     database:
-        image: 'zanbaldwin/stack/database/production:${VERSION:-latest}'
+        image: 'zanbaldwin/stack/database/production'
         build:
             context: './build/docker/database'
             target: 'production'
@@ -82,7 +82,7 @@ services:
         logging: *default-logging
 
     migrate:
-        image: 'zanbaldwin/stack/migrate/production:${VERSION:-latest}'
+        image: 'zanbaldwin/stack/migrate/production'
         build:
             context: './build/docker/migrate'
             target: 'production'
@@ -113,7 +113,7 @@ services:
         logging: *default-logging
 
     workers:
-        image: 'zanbaldwin/stack/php/production:${VERSION:-latest}'
+        image: 'zanbaldwin/stack/php/production'
         build:
             context: './build/docker/php'
             target: 'production'
@@ -135,7 +135,7 @@ services:
         logging: *default-logging
 
     redis:
-        image: 'zanbaldwin/stack/redis/production:${VERSION:-latest}'
+        image: 'zanbaldwin/stack/redis/production'
         build:
             context: './build/docker/redis'
             target: 'production'
