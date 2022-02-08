@@ -138,6 +138,9 @@ services:
         image: 'zanbaldwin/stack/php/production'
         restart: 'unless-stopped'
         command: ['crond', '-f', '-c', '/etc/crontabs']
+        depends_on:
+            -   'database'
+            -   'redis'
         environment:
             PASSWORD_SECRET_NAME: 'dbpass'
         secrets: ['dbpass']
