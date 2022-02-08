@@ -111,13 +111,6 @@ services:
 
     workers: *inject-database-secret *default-logging
         image: 'zanbaldwin/stack/php/production'
-        build:
-            context: './build/docker/php'
-            target: 'production'
-            args:
-                PHP_VERSION: '8.1'
-                GOLANG_VERSION: '1.16.5'
-                ROADRUNNER_VERSION: '2.3.0'
         restart: 'unless-stopped'
         command: ['php', 'bin/console', 'messenger:consume', '--env=prod']
         depends_on:
