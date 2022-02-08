@@ -82,16 +82,11 @@ services:
     migrate: *inject-database-secret *default-logging
         image: 'zanbaldwin/stack/migrate/production'
         build:
-            context: './build/docker/migrate'
+            dockerfile: './build/docker/migrate/Dockerfile'
             target: 'production'
             args: {}
         depends_on:
             -   'database'
-        volumes:
-            -   type: bind
-                source: './migrations'
-                target: '/migrations'
-                read_only: true
         environment:
             DATABASE_URL: '${DATABASE_URL:-mysql://root@database/main}'
 

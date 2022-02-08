@@ -52,6 +52,11 @@ services:
         image: 'zanbaldwin/stack/migrate/development'
         build:
             target: 'development'
+        volumes:
+            -   type: bind
+                source: './migrations'
+                target: '/migrations'
+                read_only: true
 
     queue:
         image: 'rabbitmq:3.9.11-management-alpine'

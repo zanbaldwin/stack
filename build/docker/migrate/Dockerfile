@@ -1,7 +1,7 @@
 FROM "golang:1.17.5-alpine3.15" AS builder
 MAINTAINER Zan Baldwin "hello@zanbaldwin.com"
 
-COPY "dbenv.go" "/go/src/github.com/zanbaldwin/dbenv/main.go"
+COPY "./build/docker/migrate/dbenv.go" "/go/src/github.com/zanbaldwin/dbenv/main.go"
 ARG MIGRATE_VERSION="v4.15.1"
 RUN    apk add --no-cache --virtual .migrate-build-deps git \
     && go install -tags 'mysql' "github.com/golang-migrate/migrate/v4/cmd/migrate@${MIGRATE_VERSION}" \
@@ -29,9 +29,11 @@ ENTRYPOINT [ "/tini", "--" ]
 RUN apk add --no-cache --virtual .migrate-runtime-deps bash mysql-client mariadb-connector-c
 COPY --from="builder" "/go/bin/migrate" "/sbin/migrate"
 COPY --from="builder" "/sbin/dbenv" "/sbin/dbenv"
-COPY "./entrypoint.sh" "/entrypoint.sh"
+COPY "./build/docker/migrate/entrypoint.sh" "/entrypoint.sh"
 ENV DATABASE_URL "mysql://root@database/stack"
 CMD [ "bash", "/entrypoint.sh" ]
 
 FROM development AS production
 MAINTAINER Zan Baldwin "hello@zanbaldwin.com"
+
+COPY './migrations' '/migrations'
