@@ -91,9 +91,6 @@ services:
             # worker then do it directly by stopping this container and running the "messenger:consume" command directly
             # in the PHP container.
             XDEBUG_MODE: 'off'
-        extra_hosts:
-            # Add an entry in /etc/hosts to point to the host machine (for XDebug).
-            - 'host.docker.internal:host-gateway'
 
     redis:
         image: 'zanbaldwin/stack/redis/development'
