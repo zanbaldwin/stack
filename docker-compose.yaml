@@ -112,7 +112,16 @@ services:
     workers: *inject-database-secret *default-logging
         image: 'zanbaldwin/stack/php/production'
         restart: 'unless-stopped'
-        command: ['php', 'bin/console', 'messenger:consume', '--env=prod']
+        command:
+            -   'php'
+            -   'bin/console'
+            -   'messenger:consume'
+            -   '--env=prod'
+            -   '--memory-limit=128M'
+            -   '--time-limit=900'
+            -   '--limit=128'
+            -   '--failure-limit=16'
+            -   'async'
         depends_on:
             -   'database'
             -   'queue'
