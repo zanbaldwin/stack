@@ -11,6 +11,7 @@ services:
     server:
         image: 'zanbaldwin/stack/server/production'
         build:
+            context: './'
             dockerfile: './build/docker/server/Dockerfile'
             target: 'production'
             args:
@@ -81,6 +82,7 @@ services:
     migrate:
         image: 'zanbaldwin/stack/migrate/production'
         build:
+            context: './'
             dockerfile: './build/docker/migrate/Dockerfile'
             target: 'production'
             args: {}
