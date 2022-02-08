@@ -1,22 +1,14 @@
 version: '3.8'
 
-x-logging:
-    &default-logging
-    logging:
-        driver: 'json-file'
-        options:
-            max-size: '5m'
-            max-file: '1'
-x-database-password:
-    &inject-database-secret
-    environment:
-        PASSWORD_SECRET_NAME: 'dbpass'
-    secrets:
-        -   'dbpass'
+x-logging: &default-logging
+    driver: 'json-file'
+    options:
+        max-size: '5m'
+        max-file: '1'
 
 services:
 
-    server: *default-logging
+    server:
         image: 'zanbaldwin/stack/server/production'
         build:
             dockerfile: './build/docker/server/Dockerfile'
@@ -41,8 +33,9 @@ services:
                 source: '/etc/letsencrypt'
                 target: '/etc/letsencrypt'
                 read_only: true
+        logging: *default-logging
 
-    php: *inject-database-secret *default-logging
+    php:
         image: 'zanbaldwin/stack/php/production'
         build:
             context: './build/docker/php'
@@ -56,13 +49,17 @@ services:
             -   'database'
             -   'queue'
             -   'redis'
+        environment:
+            PASSWORD_SECRET_NAME: 'dbpass'
+        secrets: ['dbpass']
         volumes:
             -   type: 'bind'
                 source: './'
                 target: '/srv'
                 read_only: false
+        logging: *default-logging
 
-    database: *inject-database-secret *default-logging
+    database:
         image: 'zanbaldwin/stack/database/production'
         build:
             context: './build/docker/database'
@@ -73,13 +70,15 @@ services:
         environment:
             MYSQL_ROOT_PASSWORD_FILE: '/run/secrets/dbpass'
             MYSQL_DATABASE: 'main'
+        secrets: ['dbpass']
         volumes:
             -   type: 'bind'
                 source: '/opt/mysql'
                 target: '/var/lib/mysql'
                 read_only: false
+        logging: *default-logging
 
-    migrate: *inject-database-secret *default-logging
+    migrate:
         image: 'zanbaldwin/stack/migrate/production'
         build:
             dockerfile: './build/docker/migrate/Dockerfile'
@@ -89,8 +88,11 @@ services:
             -   'database'
         environment:
             DATABASE_URL: '${DATABASE_URL:-mysql://root@database/main}'
+            PASSWORD_SECRET_NAME: 'dbpass'
+        secrets: [ 'dbpass' ]
+        logging: *default-logging
 
-    queue: *default-logging
+    queue:
         image: 'rabbitmq:3.9.11-alpine'
         restart: 'unless-stopped'
         environment: {}
@@ -99,8 +101,9 @@ services:
                 source: '/opt/rabbitmq'
                 target: '/var/lib/rabbitmq'
                 read_only: false
+        logging: *default-logging
 
-    workers: *inject-database-secret *default-logging
+    workers:
         image: 'zanbaldwin/stack/php/production'
         restart: 'unless-stopped'
         command:
@@ -117,13 +120,17 @@ services:
             -   'database'
             -   'queue'
             -   'redis'
+        environment:
+            PASSWORD_SECRET_NAME: 'dbpass'
+        secrets: ['dbpass']
         volumes:
             -   type: 'bind'
                 source: './'
                 target: '/srv'
                 read_only: false
+        logging: *default-logging
 
-    redis: *default-logging
+    redis:
         image: 'zanbaldwin/stack/redis/production'
         build:
             context: './build/docker/redis'
@@ -136,6 +143,7 @@ services:
                 source: '/opt/redis'
                 target: '/data'
                 read_only: false
+        logging: *default-logging
 
 secrets:
     dbpass:
