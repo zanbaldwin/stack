@@ -145,6 +145,8 @@ services:
             # Restore System Temporary Directory on Read-only Filesystem
             -   type: 'tmpfs'
                 target: '/tmp'
+        healthcheck:
+            disable: true
         logging: *default-logging
         read_only: true
 
