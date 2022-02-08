@@ -1,15 +1,22 @@
 version: '3.8'
 
 x-logging:
-  &default-logging
-    driver: 'json-file'
-    options:
-        max-size: '5m'
-        max-file: '1'
+    &default-logging
+    logging:
+        driver: 'json-file'
+        options:
+            max-size: '5m'
+            max-file: '1'
+x-database-password:
+    &inject-database-secret
+    environment:
+        PASSWORD_SECRET_NAME: 'dbpass'
+    secrets:
+        -   'dbpass'
 
 services:
 
-    server:
+    server: *default-logging
         image: 'zanbaldwin/stack/server/production'
         build:
             context: './build/docker/server'
@@ -38,9 +45,8 @@ services:
                 source: '/etc/letsencrypt'
                 target: '/etc/letsencrypt'
                 read_only: true
-        logging: *default-logging
 
-    php:
+    php: *inject-database-secret *default-logging
         image: 'zanbaldwin/stack/php/production'
         build:
             context: './build/docker/php'
@@ -59,9 +65,8 @@ services:
                 source: './'
                 target: '/srv'
                 read_only: false
-        logging: *default-logging
 
-    database:
+    database: *inject-database-secret *default-logging
         image: 'zanbaldwin/stack/database/production'
         build:
             context: './build/docker/database'
@@ -77,11 +82,8 @@ services:
                 source: '/opt/mysql'
                 target: '/var/lib/mysql'
                 read_only: false
-        secrets:
-            -   'dbpass'
-        logging: *default-logging
 
-    migrate:
+    migrate: *inject-database-secret *default-logging
         image: 'zanbaldwin/stack/migrate/production'
         build:
             context: './build/docker/migrate'
@@ -96,12 +98,8 @@ services:
                 read_only: true
         environment:
             DATABASE_URL: '${DATABASE_URL:-mysql://root@database/main}'
-            PASSWORD_SECRET_NAME: 'dbpass'
-        secrets:
-            -   'dbpass'
-        logging: *default-logging
 
-    queue:
+    queue: *default-logging
         image: 'rabbitmq:3.9.11-alpine'
         restart: 'unless-stopped'
         environment: {}
@@ -110,9 +108,8 @@ services:
                 source: '/opt/rabbitmq'
                 target: '/var/lib/rabbitmq'
                 read_only: false
-        logging: *default-logging
 
-    workers:
+    workers: *inject-database-secret *default-logging
         image: 'zanbaldwin/stack/php/production'
         build:
             context: './build/docker/php'
@@ -132,9 +129,8 @@ services:
                 source: './'
                 target: '/srv'
                 read_only: false
-        logging: *default-logging
 
-    redis:
+    redis: *default-logging
         image: 'zanbaldwin/stack/redis/production'
         build:
             context: './build/docker/redis'
@@ -147,7 +143,6 @@ services:
                 source: '/opt/redis'
                 target: '/data'
                 read_only: false
-        logging: *default-logging
 
 secrets:
     dbpass:
