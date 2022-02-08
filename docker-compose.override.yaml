@@ -35,6 +35,11 @@ services:
         extra_hosts:
             # Add an entry in /etc/hosts to point to the host machine (for XDebug).
             - 'host.docker.internal:host-gateway'
+        volumes:
+            -   type: 'bind'
+                source: './'
+                target: '/srv'
+                read_only: false
 
     database:
         image: 'zanbaldwin/stack/database/development'
@@ -91,6 +96,11 @@ services:
             # worker then do it directly by stopping this container and running the "messenger:consume" command directly
             # in the PHP container.
             XDEBUG_MODE: 'off'
+        volumes:
+            -   type: 'bind'
+                source: './'
+                target: '/srv'
+                read_only: false
 
     redis:
         image: 'zanbaldwin/stack/redis/development'

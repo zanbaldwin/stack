@@ -39,7 +39,8 @@ services:
     php:
         image: 'zanbaldwin/stack/php/production'
         build:
-            context: './build/docker/php'
+            context: './'
+            dockerfile: './build/docker/php/Dockerfile'
             target: 'production'
             args:
                 PHP_VERSION: '8.1'
@@ -53,11 +54,6 @@ services:
         environment:
             PASSWORD_SECRET_NAME: 'dbpass'
         secrets: ['dbpass']
-        volumes:
-            -   type: 'bind'
-                source: './'
-                target: '/srv'
-                read_only: false
         logging: *default-logging
 
     database:
@@ -125,11 +121,6 @@ services:
         environment:
             PASSWORD_SECRET_NAME: 'dbpass'
         secrets: ['dbpass']
-        volumes:
-            -   type: 'bind'
-                source: './'
-                target: '/srv'
-                read_only: false
         logging: *default-logging
 
     redis:

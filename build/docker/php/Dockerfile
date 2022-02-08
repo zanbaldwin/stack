@@ -94,7 +94,7 @@ RUN if [ ! -z "${ENABLE_XDEBUG}" ]; then \
     fi
 
 ## Docker's internal container healthcheck.
-COPY "./healthcheck.sh" "/sbin/healthcheck"
+COPY "./build/docker/php/healthcheck.sh" "/sbin/healthcheck"
 RUN apk add --no-cache --virtual '.healthcheck-runtime-deps' curl fcgi
 HEALTHCHECK --interval=10s --timeout=3s --retries=3 CMD [ "sh", "/sbin/healthcheck" ]
 
@@ -107,8 +107,8 @@ RUN    apk add --no-cache --virtual .user-build-deps shadow \
     && useradd --no-create-home --uid 1000 --user-group "${PHP_USER}" \
     && sed -i -e "s/www-data/${PHP_USER}/g" '/usr/local/etc/php-fpm.d/www.conf' \
     && apk del '.user-build-deps'
-COPY './php.ini' '/usr/local/etc/php/php.ini'
-COPY './emergency_restart.conf' '/usr/local/etc/php-fpm.d/emergency_restart.conf'
+COPY './build/docker/php/php.ini' '/usr/local/etc/php/php.ini'
+COPY './build/docker/php/emergency_restart.conf' '/usr/local/etc/php-fpm.d/emergency_restart.conf'
 ## Define the user to use *AFTER* we've copied over files as root.
 USER "${PHP_USER}"
 WORKDIR '/srv'
@@ -127,3 +127,13 @@ CMD [ "php-fpm", "--nodaemonize" ]
 
 FROM development AS production
 MAINTAINER Zan Baldwin "hello@zanbaldwin.com"
+
+ARG PHP_USER="php"
+COPY --chown="${PHP_USER}" './build/docker/php/bin'          '/srv/bin'
+COPY --chown="${PHP_USER}" './build/docker/php/public'       '/srv/public'
+COPY --chown="${PHP_USER}" './build/docker/php/src'          '/srv/src'
+#COPY --chown="${PHP_USER}" './build/docker/php/templates'    '/srv/templates'
+#COPY --chown="${PHP_USER}" './build/docker/php/translations' '/srv/translations'
+ENV APP_ENV="prod"
+RUN    composer install --no-dev --prefer-dist --no-progress --optimize-autoloader --no-interaction --working-dir="/srv" \
+    && bin/console --env="prod" cache:clear
