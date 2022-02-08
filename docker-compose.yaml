@@ -55,6 +55,10 @@ services:
         environment:
             PASSWORD_SECRET_NAME: 'dbpass'
         secrets: ['dbpass']
+        volumes:
+            # Restore System Temporary Directory on Read-only Filesystem
+            -   type: 'tmpfs'
+                target: '/tmp'
         logging: *default-logging
         read_only: true
 
@@ -124,6 +128,10 @@ services:
         environment:
             PASSWORD_SECRET_NAME: 'dbpass'
         secrets: ['dbpass']
+        volumes:
+            # Restore System Temporary Directory on Read-only Filesystem
+            -   type: 'tmpfs'
+                target: '/tmp'
         logging: *default-logging
         read_only: true
 
@@ -134,6 +142,10 @@ services:
         environment:
             PASSWORD_SECRET_NAME: 'dbpass'
         secrets: ['dbpass']
+        volumes:
+            # Restore System Temporary Directory on Read-only Filesystem
+            -   type: 'tmpfs'
+                target: '/tmp'
         logging: *default-logging
         read_only: true
 
