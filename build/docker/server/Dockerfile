@@ -23,10 +23,10 @@ RUN    rm -rf '/etc/nginx/conf.d' \
     && mkdir -p '/srv/public' \
     && [ -e '/srv/public/index.php' ] || touch '/srv/public/index.php'
 
-COPY './acme.conf' '/etc/nginx/acme.conf'
-COPY './challenges.conf' '/etc/nginx/challenges.conf'
-COPY './ssl.conf' '/etc/nginx/ssl.conf'
-COPY './server.conf' '/etc/nginx/conf.d/server.conf'
+COPY './build/docker/server/acme.conf' '/etc/nginx/acme.conf'
+COPY './build/docker/server/challenges.conf' '/etc/nginx/challenges.conf'
+COPY './build/docker/server/ssl.conf' '/etc/nginx/ssl.conf'
+COPY './build/docker/server/server.conf' '/etc/nginx/conf.d/server.conf'
 
 # Create a new user with UID#1000 (the UID that the user on the host machine is likely to have).
 # Instruct Nginx to run as that user.
@@ -48,3 +48,5 @@ CMD [ "nginx", "-g", "daemon off;" ]
 
 FROM development AS production
 MAINTAINER Zan Baldwin "hello@zanbaldwin.com"
+
+COPY './public' '/srv/public'

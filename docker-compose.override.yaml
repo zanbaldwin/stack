@@ -10,6 +10,10 @@ services:
         build:
             target: 'development'
         volumes:
+            -   type: 'bind'
+                source: './public'
+                target: '/srv/public'
+                read_only: true
             # Use self-generated certificates during development.
             -   type: 'bind'
                 source: './build/.secrets/ssl'

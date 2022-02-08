@@ -19,7 +19,7 @@ services:
     server: *default-logging
         image: 'zanbaldwin/stack/server/production'
         build:
-            context: './build/docker/server'
+            dockerfile: './build/docker/server/Dockerfile'
             target: 'production'
             args:
                 NGINX_VERSION: '1.21.4'
@@ -37,10 +37,6 @@ services:
                 protocol: 'tcp'
                 mode: 'host'
         volumes:
-            -   type: 'bind'
-                source: './public'
-                target: '/srv/public'
-                read_only: true
             -   type: 'bind'
                 source: '/etc/letsencrypt'
                 target: '/etc/letsencrypt'
