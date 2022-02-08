@@ -1,4 +1,4 @@
+###> zanbaldwin/stack ###
 /.idea/
 /build/.secrets/
-/var/
-/vendor/
+###< zanbaldwin/stack ###
